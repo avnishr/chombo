@@ -1,7 +1,7 @@
-package main.scala.org.chombo.spark.jobs
+package org.chombo.spark.jobs
 
 import org.chombo.spark.common.JobConfiguration
-import org.chombo.spark.etl.DataValidator._
+
 
 /**
   * Created by avi on 3/12/2017.
