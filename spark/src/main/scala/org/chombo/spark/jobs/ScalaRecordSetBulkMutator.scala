@@ -5,9 +5,10 @@ import java.util.function.Consumer
 
 import org.chombo.spark.common.JobConfiguration
 import com.typesafe.config.Config
+import main.scala.org.chombo.spark.common.SecondarySortScala
 import org.apache.spark.SparkContext
-import org.chombo.util.Utility
-import org.chombo.util.Tuple
+import org.chombo.util.{SecondarySort, Tuple, Utility}
+import org.chombo.spark.common._
 
 object ScalaRecordSetBulkMutator extends JobConfiguration {
 
@@ -83,6 +84,7 @@ object ScalaRecordSetBulkMutator extends JobConfiguration {
       * The partitioner should also be looking at the first two fields of the key tuple.
       */
 
+    rdd.reduceByKey(SecondarySortScala.TuplePairPartitioner.class, )
 
   }
 
