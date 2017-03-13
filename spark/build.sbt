@@ -26,3 +26,5 @@ libraryDependencies ++=Seq(
 net.virtualvoid.sbt.graph.Plugin.graphSettings
 
 assemblySettings
+
+publishM2

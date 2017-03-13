@@ -21,6 +21,8 @@
                 <hadoop.version>0.20.2-cdh3u2</hadoop.version>
                 <jackson.version>1.9.13</jackson.version>
                 <jdk.level>1.6</jdk.level>
+                <spark.version>2.1.0</spark.version>
+                <scalaVersion>2.11.0</scalaVersion>
             </properties>
         </profile>
     </profiles>
@@ -72,6 +74,17 @@
                     <artifactId>jmxtools</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_2.11</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>${scalaVersion}</version>
         </dependency>
 
         <dependency>
