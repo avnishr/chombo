@@ -75,4 +75,14 @@ object CommonUtil {
     rawMod + (if (rawMod < 0) mod else 0)
   }
 
+  def combineValue [U] ( u : U, v : java.util.List[U] ) : java.util.List[U] = {
+    v.add(u)
+    v
+  }
+
+  def mergeValues [U] ( u : java.util.List[U], v : java.util.List[U] ) : java.util.List[U] = {
+    v.addAll(u)
+    v
+  }
+
 }

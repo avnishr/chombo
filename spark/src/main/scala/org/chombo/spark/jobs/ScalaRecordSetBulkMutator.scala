@@ -1,14 +1,12 @@
 package org.chombo.spark.jobs
 
-import java.util
 import java.util.function.Consumer
 
-import org.chombo.spark.common.JobConfiguration
 import com.typesafe.config.Config
-import main.scala.org.chombo.spark.common.SecondarySortScala
 import org.apache.spark.SparkContext
-import org.chombo.util.{SecondarySort, Tuple, Utility}
-import org.chombo.spark.common._
+import org.apache.spark.rdd.RDD
+import org.chombo.spark.common.JobConfiguration
+import org.chombo.util.{Tuple, Utility}
 
 object ScalaRecordSetBulkMutator extends JobConfiguration {
 
@@ -19,7 +17,7 @@ object ScalaRecordSetBulkMutator extends JobConfiguration {
   var deletedRecFilePrefix: String = ""
   var temporalOrderingFieldFieldOrdinal: Int = 0
   var isTemporalOrderingFieldNumeric: Boolean = true
-  var idFieldOrdinals: java.util.List[Integer] = new util.ArrayList[Integer]();
+  var idFieldOrdinals: java.util.List[Integer] = new java.util.ArrayList[Integer]();
 
   def main(args: Array[String]) {
 
@@ -35,7 +33,7 @@ object ScalaRecordSetBulkMutator extends JobConfiguration {
 
     readConfig(config)
 
-    processFiles(inputPath, outputPath, sparkCntxt)
+    processData(inputPath, outputPath, sparkCntxt)
 
   }
 
@@ -68,23 +66,22 @@ object ScalaRecordSetBulkMutator extends JobConfiguration {
 
   }
 
-
-  def processFiles(inputPath: String, outputPath: String, sparkCntxt: SparkContext) = {
+  def processData(inputPath: String, outputPath: String, sparkCntxt: SparkContext) = {
 
     /**
       * We would read a line and create a tuple of Tuples which would contain, key and action in key Tuple
       * while the value tuple will have the entire record
       */
-    val rdd = sparkCntxt.textFile(inputPath).map(x => convertLineToTuple(x))
+    val rdd: RDD[(Tuple, Tuple)] = sparkCntxt.textFile(inputPath).map(x => convertLineToTuple(x))
 
     /**
-      * The above tuples now need to be grouped so that all the records with same id ordinals i.e, the records which have
-      * key tuple with the first two fields same are grouped together.
-      *
-      * The partitioner should also be looking at the first two fields of the key tuple.
+      * The reduce operation will filter out irrelevant records
       */
+    val reducedRDD : RDD[(Tuple, Tuple)] = rdd.reduceByKey( (u,v) => removeRedundantData(u,v))
 
-    rdd.reduceByKey(SecondarySortScala.TuplePairPartitioner.class, )
+    val filteredRDD = reducedRDD.filter( x  => x._2.getString(3).equalsIgnoreCase(deleteOpCode))
+
+    filteredRDD.saveAsTextFile(outputPath)
 
   }
 
@@ -103,10 +100,10 @@ object ScalaRecordSetBulkMutator extends JobConfiguration {
       case -1 => println("No temporal ordering field provided")
       case _ => {
         if (isTemporalOrderingFieldNumeric) {
-          keyOut.append(Long.unbox(items(temporalOrderingFieldFieldOrdinal)))
+          valOut.append(Long.unbox(items(temporalOrderingFieldFieldOrdinal)))
         }
         else {
-          keyOut.append(items(temporalOrderingFieldFieldOrdinal))
+          valOut.append(items(temporalOrderingFieldFieldOrdinal))
         }
       }
     }
@@ -127,4 +124,22 @@ object ScalaRecordSetBulkMutator extends JobConfiguration {
     (keyOut, valOut)
   }
 
+  def removeRedundantData(u: Tuple, v: Tuple) : Tuple ={
+
+    // there might be a delete operation if the tuple has three fields
+    var retVal : Option[Tuple] = None
+
+    retVal = u.getSize() match  {
+
+      case 3 =>  Some(u)
+      case _ => {
+          v.getSize() match  {
+
+            case 3 => Some(v)
+            case _ => if ( u.getLong(0) >= v.getLong(0)) Some(u) else Some(v)
+          }
+      }
+    }
+    retVal.get
+  }
 }
